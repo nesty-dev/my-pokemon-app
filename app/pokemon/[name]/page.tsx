@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import BackButton from "@/components/BackButton";
 import type { Metadata } from "next";
 
 type PokemonDetail = {
@@ -127,6 +128,11 @@ export default async function PokemonDetailPage({ params }: Props) {
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
+      {/* Back Button */}
+      <div className="flex justify-start">
+        <BackButton />
+      </div>
+
       {/* Main Pokemon Card */}
       <Card>
         <CardHeader>
