@@ -1,5 +1,6 @@
 // app/pokemon/page.tsx
 
+import Pagination from "@/components/Pagination";
 import PokemonCard from "@/components/PokemonCard";
 import type {
   PokemonListResponse,
@@ -17,10 +18,13 @@ export const metadata: Metadata = {
   },
 };
 
-async function fetchPokemonList(limit = 50): Promise<PokemonListResponse> {
+async function fetchPokemonList(
+  limit = 50,
+  offset = 0
+): Promise<PokemonListResponse> {
   try {
     const res = await fetch(
-      `https://pokeapi.co/api/v2/pokemon?limit=${limit}`,
+      `https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=${offset}`,
       {
         next: { revalidate: 3600 }, // Cache for 1 hour
       }
@@ -56,8 +60,19 @@ async function fetchPokemonDetails(
   }
 }
 
-export default async function PokemonPage() {
-  const pokemonList = await fetchPokemonList(); // Fetch only 5 Pokemon for testing
+type PokemonPageProps = {
+  searchParams: Promise<{
+    page?: string;
+  }>;
+};
+
+export default async function PokemonPage({ searchParams }: PokemonPageProps) {
+  const params = await searchParams;
+  const currentPage = parseInt(params.page || "1");
+  const limit = 50;
+  const offset = (currentPage - 1) * limit;
+
+  const pokemonList = await fetchPokemonList(limit, offset);
   try {
     const pokemonWithDetails = await Promise.all(
       pokemonList.results.map(async (pokemon) => {
@@ -76,16 +91,15 @@ export default async function PokemonPage() {
       (pokemon): pokemon is PokemonWithDetails => pokemon !== null
     );
 
-    console.log(
-      `Valid Pokemon: ${validPokemon.length}/${pokemonWithDetails.length}`
-    );
-
     return (
       <div className="container mx-auto p-6 space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold">Pokemon Database</h1>
           <p className="text-muted-foreground text-lg">
             Discover amazing Pokemon species
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Showing {validPokemon.length} Pokemon • Page {currentPage}
           </p>
         </div>
 
@@ -95,10 +109,12 @@ export default async function PokemonPage() {
           })}
         </div>
 
-        <div className="text-center pt-6">
-          <p className="text-muted-foreground">
-            Showing {validPokemon.length} Pokemon. More features coming soon!
-          </p>
+        <div className="flex justify-center">
+          <Pagination
+            currentPage={currentPage}
+            hasNext={!!pokemonList.next}
+            hasPrevious={!!pokemonList.previous}
+          />
         </div>
       </div>
     );
