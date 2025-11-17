@@ -1,10 +1,12 @@
 // app/pokemon/[name]/page.tsx
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { notFound } from "next/navigation";
-import Image from "next/image";
 import BackButton from "@/components/BackButton";
+import PokemonType from "@/components/PokemonType";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { PokemonWithDetails } from "@/src/types/pokemon";
 import type { Metadata } from "next";
+import Image from "next/image";
+import { notFound } from "next/navigation";
 
 type PokemonDetail = {
   id: number;
@@ -42,7 +44,7 @@ type Props = {
   params: Promise<{ name: string }>;
 };
 
-async function fetchPokemon(name: string): Promise<PokemonDetail | null> {
+async function fetchPokemon(name: string): Promise<PokemonWithDetails | null> {
   try {
     const res = await fetch(
       `https://pokeapi.co/api/v2/pokemon/${name.toLowerCase()}`,
@@ -105,26 +107,9 @@ export default async function PokemonDetailPage({ params }: Props) {
     pokemon.sprites.other?.["official-artwork"]?.front_default ||
     pokemon.sprites.front_default;
 
-  const typeColors: Record<string, string> = {
-    normal: "bg-gray-400",
-    fire: "bg-red-500",
-    water: "bg-blue-500",
-    electric: "bg-yellow-400",
-    grass: "bg-green-500",
-    ice: "bg-blue-200",
-    fighting: "bg-red-700",
-    poison: "bg-purple-500",
-    ground: "bg-yellow-600",
-    flying: "bg-indigo-400",
-    psychic: "bg-pink-500",
-    bug: "bg-green-400",
-    rock: "bg-yellow-800",
-    ghost: "bg-purple-700",
-    dragon: "bg-indigo-700",
-    dark: "bg-gray-800",
-    steel: "bg-gray-600",
-    fairy: "bg-pink-300",
-  };
+  const shinyImage =
+    pokemon.sprites.other?.["official-artwork"]?.front_shiny ||
+    pokemon.sprites.front_shiny;
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
@@ -143,31 +128,49 @@ export default async function PokemonDetailPage({ params }: Props) {
             </span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col items-center gap-6">
-          {primaryImage && (
-            <div className="relative">
-              <Image
-                src={primaryImage}
-                alt={pokemon.name}
-                width={200}
-                height={200}
-                className="drop-shadow-lg"
-                priority
-              />
-            </div>
-          )}
+        <CardContent className="flex flex-col items-center gap-10">
+          <div className="flex gap-5">
+            {primaryImage && (
+              <div className="relative flex flex-col items-center gap-2">
+                <Image
+                  src={primaryImage}
+                  alt={pokemon.name}
+                  width={200}
+                  height={200}
+                  className="drop-shadow-lg"
+                  priority
+                />
+
+                <span className="text-sm text-muted-foreground font-semibold">
+                  Default
+                </span>
+              </div>
+            )}
+
+            {shinyImage && (
+              <div className="relative flex flex-col items-center gap-2">
+                <Image
+                  src={shinyImage}
+                  alt={`${pokemon.name} shiny`}
+                  width={200}
+                  height={200}
+                  className="drop-shadow-lg"
+                  priority
+                />
+                <span className="text-sm text-muted-foreground font-semibold">
+                  Shiny
+                </span>
+              </div>
+            )}
+          </div>
 
           {/* Types */}
           <div className="flex gap-2">
             {pokemon.types.map((type) => (
-              <span
-                key={type.type.name}
-                className={`px-3 py-1 rounded-full text-white text-sm font-medium ${
-                  typeColors[type.type.name] || "bg-gray-400"
-                }`}
-              >
-                {type.type.name}
-              </span>
+              <PokemonType
+                key={type?.type?.name || "unknown"}
+                type={type?.type?.name || "unknown"}
+              />
             ))}
           </div>
 
@@ -198,14 +201,14 @@ export default async function PokemonDetailPage({ params }: Props) {
           <div className="flex flex-wrap gap-2">
             {pokemon.abilities.map((ability) => (
               <span
-                key={ability.ability.name}
+                key={ability.ability?.name}
                 className={`px-3 py-1 rounded-full text-sm ${
                   ability.is_hidden
                     ? "bg-yellow-100 text-yellow-800 border border-yellow-300"
                     : "bg-blue-100 text-blue-800"
                 }`}
               >
-                {ability.ability.name.replace("-", " ")}
+                {ability.ability?.name.replace("-", " ")}
                 {ability.is_hidden && " (Hidden)"}
               </span>
             ))}
